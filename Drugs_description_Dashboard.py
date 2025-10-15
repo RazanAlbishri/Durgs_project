@@ -1,11 +1,6 @@
-# 💊 Medicine App (Bilingual EN/AR) — Full EDA + Chatbot
-
+# 💊 Medicine App (Bilingual EN/AR) — Simple Display Version
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import re
 
 # Config
 st.set_page_config(
@@ -15,9 +10,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-CSV_PATH = r"medicines.csv"
+# Load Data
+@st.cache_data
+def load_data():
+    df = pd.read_csv("medicines.csv", dtype=str, low_memory=False)
+    df.columns = df.columns.str.strip()
+    df = df.dropna(how="all").drop_duplicates().fillna("Unknown")
+    return df
 
-# Language (EN / AR)
+df = load_data()
+
+# Language Setup
 if "language" not in st.session_state:
     st.session_state.language = "English"
 
@@ -25,33 +28,7 @@ def toggle_language():
     st.session_state.language = "Arabic" if st.session_state.language == "English" else "English"
 
 EN = {
-    "title": "💊 Durgs Dataset Dashboard & Chatbot",
-    "eda_tab": "📊 EDA Dashboard",
-    "chat_tab": "💬 Chatbot Assistant",
-    "lang_settings": "🌐 Language",
-    "switch_lang": "🔄 Switch to Arabic",
-    "overview": "📋 Data Overview",
-    "data_sample": "Data Sample",
-    "data_summary": "Data Summary",
-    "rows": "Number of rows:",
-    "columns": "Number of columns",
-    "no_missing": "✅ No missing values found!",
-    "no_duplicates": "✅ No duplicate rows found!",
-    "stats": "📊 Data Statistics",
-    "num_drugs": "Number of Drugs in Dataset",
-    "top_ther": "🏥 Top Therapeutic Classes",
-    "top_chem": "🧪 Top Chemical Classes",
-    "habit_pie": "Habit Forming Drugs Distribution",
-    "top_side": "Top 20 Reported Side Effects",
-    "top_uses": "📈 Top 20 Drug Uses",
-    "subs_hist": "🔄 Distribution of Substitute Counts per Drug",
-    "subs_top10": "Top 10 Drugs with Most Substitutes",
-    "quick_overview": "#### Quick Overview",
-    "top_action": "Top 10 Action Classes",
-    "habit_dist": "Habit Forming Distribution",
-    "use_chart": "Top 10 Common Drug Uses",
-    "corr": "📊 Correlation Heatmap",
-    "summary": "📌 Summary Insights",
+    "title": "💊 Drugs Dataset Dashboard & Chatbot",
     "chat_header": "💬 Smart drug Chatbot",
     "chat_caption": "Type a drug name and choose what details to display.",
     "select_display": "Select what to display:",
@@ -63,43 +40,15 @@ EN = {
     "chk_habit": "Habit Forming",
     "chat_input": "💬 Type a drug name (e.g., augmentin)...",
     "no_match": "⚠️ No matching drug found.",
-    "uni_med":"Unique Drugs",
-    "the_cls":"Therapeutic Classes",
-    "uni_side":"Unique Side Effects",
-    "avlb_sub":"Available Substitutes",
-    "footer": "💊 Drugs Dashboard | Data source: Kaggle Dataset"
+    "footer": "💊 Drugs Dashboard | Data source: Kaggle Dataset",
+    "switch_lang": "Switch to Arabic",
+    "lang_settings": "Language"
 }
 
 AR = {
     "title": "💊 لوحة بيانات الأدوية وروبوت المحادثة",
-    "eda_tab": "📊 لوحة التحليل",
-    "chat_tab": "💬 روبوت المحادثة",
-    "lang_settings": "🌐 اللغة",
-    "switch_lang": "🔄 التبديل إلى الإنجليزية",
-    "overview": "📋 نظرة عامة على البيانات",
-    "data_sample": "عينة من البيانات",
-    "data_summary": "ملخص البيانات",
-    "rows": "عدد الصفوف",
-    "columns": "عدد الأعمدة",
-    "no_missing": "✅ لا توجد قيم مفقودة!",
-    "no_duplicates": "✅ لا توجد صفوف مكررة!",
-    "stats": "📊 التحليل الإحصائي",
-    "num_drugs": "عدد الأدوية في مجموعة البيانات",
-    "top_ther": "🏥 أكثر الفئات العلاجية تكرارًا",
-    "top_chem": "🧪 أكثر الفئات الكيميائية تكرارًا",
-    "habit_pie": " توزيع قابلية الإدمان",
-    "top_side": " أكثر 20 عَرَضًا جانبيًا انتشارًا",
-    "top_uses": "📈 أكثر 20 استخدامًا شيوعًا",
-    "quick_overview": "#### نظرة سريعة",
-    "top_action": "أعلى 10 فئات تأثيرًا",
-    "habit_dist": "توزيع الأدوية القابلة للإدمان",
-    "use_chart": "أكثر 10 استخدامات شيوعًا للأدوية",
-    "subs_hist": "🔄 توزيع عدد البدائل لكل دواء",
-    "subs_top10": " أعلى 10 أدوية بعدد بدائل",
-    "corr": "📊 خريطة الارتباط",
-    "summary": " ملخص الاستنتاجات",
-    "chat_header": "💬 روبوت محادثة الأدوية",
-    "chat_caption": "اكتب اسم دواء واختر التفاصيل التي تريد عرضها.",
+    "chat_header": "💬 روبوت الأدوية الذكي",
+    "chat_caption": "اكتب اسم الدواء واختر التفاصيل التي تريد عرضها.",
     "select_display": "اختر ما تريد عرضه:",
     "chk_use": "الاستخدام",
     "chk_side": "⚠️ الأعراض الجانبية",
@@ -109,15 +58,13 @@ AR = {
     "chk_habit": "قابلية الإدمان",
     "chat_input": "💬 اكتب اسم دواء (مثل augmentin)...",
     "no_match": "⚠️ لم يتم العثور على دواء مطابق.",
-    "uni_med" : "عدد الأدوية الفريدة",
-    "the_cls":"عدد الفئات العلاجية",
-    "uni_side":"عدد الأعراض الجانبية الفريدة",
-    "avlb_sub":"عدد البدائل المتاحة",
-    "footer": "💊 لوحة الأدوية | المصدر: Kaggle Dataset"
+    "footer": "💊 لوحة الأدوية | المصدر: Kaggle Dataset",
+    "switch_lang": "التبديل إلى الإنجليزية",
+    "lang_settings": "اللغة"
 }
 
 def get_text(key):
-    return (AR if st.session_state.language == "Arabic" else EN).get(key, key)
+    return (AR if st.session_state.language == "Arabic" else EN)[key]
 
 # Sidebar
 with st.sidebar:
@@ -127,30 +74,7 @@ with st.sidebar:
     st.title(get_text("title"))
     st.markdown("---")
 
-# Load data
-
-@st.cache_data
-def load_data():
-    df = pd.read_csv(
-        r"medicines.csv",
-        dtype=str,
-        low_memory=False
-    )
-    df.columns = df.columns.str.strip()
-
-    df = df.dropna(how="all").copy()            
-    df = df.drop_duplicates(keep="first").copy()  
-    df = df.dropna(subset=["name"]).copy()      
-
-    df = df.dropna(axis=1, how="all").copy()
-
-    df = df.fillna("Unknown")
-
-    df.reset_index(drop=True, inplace=True)
-    return df
-
-data = load_data()
-
+# Main Interface
 st.header(get_text("chat_header"))
 st.caption(get_text("chat_caption"))
 
@@ -165,45 +89,33 @@ show_hab  = c6.checkbox(get_text("chk_habit"), False)
 
 st.markdown("---")
 
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+drug_name = st.text_input(get_text("chat_input"))
 
-for msg in st.session_state.chat_history:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-if prompt := st.chat_input(get_text("chat_input")):
-    st.session_state.chat_history.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    q = prompt.lower().strip()
-    results = data[data["name"].astype(str).str.lower().str.contains(q, na=False)]
+if drug_name:
+    q = drug_name.lower().strip()
+    results = df[df["name"].astype(str).str.lower().str.contains(q, na=False)]
 
     if results.empty:
-        resp = get_text("no_match")
+        st.warning(get_text("no_match"))
     else:
-        resp = ""
         for _, row in results.head(3).iterrows():
-            resp += f"### 🩺 {row['name']}\n"
+            st.markdown(f"### 🩺 {row['name']}")
             if show_use and "use" in row:
-                resp += f"**{get_text('chk_use')}:** {row['use']}\n\n"
+                st.write(f"**{get_text('chk_use')}:** {row['use']}")
             if show_side and "sideEffect" in row:
-                resp += f"**{get_text('chk_side')}:** {row['sideEffect']}\n\n"
+                st.write(f"**{get_text('chk_side')}:** {row['sideEffect']}")
             if show_sub and "substitute" in row:
-                resp += f"**{get_text('chk_sub')}:** {row['substitute']}\n\n"
+                st.write(f"**{get_text('chk_sub')}:** {row['substitute']}")
             if show_tcl and "Therapeutic Class" in row:
-                resp += f"**{get_text('chk_tclass')}:** {row['Therapeutic Class']}\n\n"
+                st.write(f"**{get_text('chk_tclass')}:** {row['Therapeutic Class']}")
             if show_ccl and "Chemical Class" in row:
-                resp += f"**{get_text('chk_cclass')}:** {row['Chemical Class']}\n\n"
+                st.write(f"**{get_text('chk_cclass')}:** {row['Chemical Class']}")
             if show_hab and "Habit Forming" in row:
-                resp += f"**{get_text('chk_habit')}:** {row['Habit Forming']}\n\n"
-            resp += "---\n"
-
-    st.session_state.chat_history.append({"role": "assistant", "content": resp})
-    with st.chat_message("assistant"):
-        st.markdown(resp)
+                st.write(f"**{get_text('chk_habit')}:** {row['Habit Forming']}")
+            st.markdown("---")
 
 # Footer
-st.markdown("---")
-st.markdown(f"<div style='text-align:center; color:#666;'>{get_text('footer')}</div>", unsafe_allow_html=True)
+st.markdown(
+    f"<div style='text-align:center; color:#666; margin-top: 50px;'>{get_text('footer')}</div>",
+    unsafe_allow_html=True
+)
