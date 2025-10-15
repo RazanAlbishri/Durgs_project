@@ -151,149 +151,58 @@ def load_data():
 
 data = load_data()
 
-# Tabs
-st.title(get_text("title"))
-tab1, tab2 = st.tabs([get_text("eda_tab"), get_text("chat_tab")])
+st.header(get_text("chat_header"))
+st.caption(get_text("chat_caption"))
 
-# TAB 1: EDA
-with tab1:
-    st.markdown(get_text("quick_overview"))
+st.markdown("### " + get_text("select_display"))
+c1, c2, c3, c4, c5, c6 = st.columns(6)
+show_use  = c1.checkbox(get_text("chk_use"), True)
+show_side = c2.checkbox(get_text("chk_side"), True)
+show_sub  = c3.checkbox(get_text("chk_sub"), False)
+show_tcl  = c4.checkbox(get_text("chk_tclass"), False)
+show_ccl  = c5.checkbox(get_text("chk_cclass"), False)
+show_hab  = c6.checkbox(get_text("chk_habit"), False)
 
-    col1, col2, col3, col4 = st.columns(4)
+st.markdown("---")
 
-    total_meds = data["name"].nunique()
-    classes = data["Therapeutic Class"].nunique() if "Therapeutic Class" in data.columns else 0
-    side_effects = data["sideEffect"].nunique() if "sideEffect" in data.columns else 0
-    subs = data["substitute"].nunique() if "substitute" in data.columns else 0
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-    col1.metric(get_text("uni_med"), f"{total_meds:,}")
-    col2.metric(get_text("the_cls"), f"{classes:,}")
-    col3.metric(get_text("uni_side"), f"{side_effects:,}")
-    col4.metric(get_text("avlb_sub"), f"{subs:,}")
+for msg in st.session_state.chat_history:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-    st.header(get_text("overview"))
-    col1, col2 = st.columns([2, 1])
+if prompt := st.chat_input(get_text("chat_input")):
+    st.session_state.chat_history.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-    with col1:
-        st.subheader("📋 " + get_text("data_sample"))
-        st.dataframe(data.head(10))
+    q = prompt.lower().strip()
+    results = data[data["name"].astype(str).str.lower().str.contains(q, na=False)]
 
-    with col2:
-        st.subheader("🔍 " + get_text("data_summary"))
-        st.write(f"**{get_text('rows')}:** {data.shape[0]:,}")
-        st.write(f"**{get_text('columns')}:** {data.shape[1]}")
-        st.success(get_text("no_missing"))
-        st.success(get_text("no_duplicates"))
+    if results.empty:
+        resp = get_text("no_match")
+    else:
+        resp = ""
+        for _, row in results.head(3).iterrows():
+            resp += f"### 🩺 {row['name']}\n"
+            if show_use and "use" in row:
+                resp += f"**{get_text('chk_use')}:** {row['use']}\n\n"
+            if show_side and "sideEffect" in row:
+                resp += f"**{get_text('chk_side')}:** {row['sideEffect']}\n\n"
+            if show_sub and "substitute" in row:
+                resp += f"**{get_text('chk_sub')}:** {row['substitute']}\n\n"
+            if show_tcl and "Therapeutic Class" in row:
+                resp += f"**{get_text('chk_tclass')}:** {row['Therapeutic Class']}\n\n"
+            if show_ccl and "Chemical Class" in row:
+                resp += f"**{get_text('chk_cclass')}:** {row['Chemical Class']}\n\n"
+            if show_hab and "Habit Forming" in row:
+                resp += f"**{get_text('chk_habit')}:** {row['Habit Forming']}\n\n"
+            resp += "---\n"
 
-    st.markdown("---")
-    st.header(get_text("stats"))
-
-# Plot 1:Therapeutic Class
-    if "Therapeutic Class" in data.columns:
-        st.subheader(get_text("top_ther"))
-        top_thera = data["Therapeutic Class"].value_counts().head(20).reset_index()
-        top_thera.columns = ["Therapeutic Class", "Count"]
-        fig = px.bar(top_thera, x="Therapeutic Class", y="Count", color="Count",
-                     text="Count", color_continuous_scale="Blues")
-        fig.update_traces(textposition="outside")
-        fig.update_layout(xaxis_tickangle=-60, height=450)
-        st.plotly_chart(fig, use_container_width=True)
-
-# Plot 2: Action Class Count 
-    if "Action Class" in data.columns:
-        st.subheader(get_text("top_action"))
-        fig2 = px.bar(
-            data["Action Class"].value_counts().head(10),
-            labels={"index": "Action Class", "value": "Count"},
-            color=data["Action Class"].value_counts().head(10).values
-        )
-        st.plotly_chart(fig2, use_container_width=True)
-
-# Plot 3: Habit Forming Distribution
-    if "Habit Forming" in data.columns:
-        st.subheader(get_text("habit_dist"))
-        fig3 = px.pie(
-            data, names="Habit Forming",
-            color_discrete_sequence=px.colors.qualitative.Safe
-        )
-        st.plotly_chart(fig3, use_container_width=True)
-
-# Plot 4: Clean Common Drug Uses Chart
-    if "use" in data.columns:
-        use_counts = (
-            data["use"].dropna().str.split(",").explode().str.strip().value_counts().head(10)
-        )
-        st.subheader(get_text("use_chart"))
-    fig4 = px.bar(
-        use_counts,
-        x=use_counts.values,
-        y=use_counts.index,
-        orientation="h",  
-        labels={"x": "Frequency", "y": "Drug Use"},
-    )
-    fig4.update_layout(
-        showlegend=False,
-        title_x=None,
-        margin=dict(l=100, r=40, t=50, b=40)
-    )
-    st.plotly_chart(fig4, use_container_width=True)
-
-
-#------------------------------------------------------------------------------------
-# TAB 2: Chatbot
-with tab2:
-    st.header(get_text("chat_header"))
-    st.caption(get_text("chat_caption"))
-
-    st.markdown("### " + get_text("select_display"))
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
-    show_use  = c1.checkbox(get_text("chk_use"), True)
-    show_side = c2.checkbox(get_text("chk_side"), True)
-    show_sub  = c3.checkbox(get_text("chk_sub"), False)
-    show_tcl  = c4.checkbox(get_text("chk_tclass"), False)
-    show_ccl  = c5.checkbox(get_text("chk_cclass"), False)
-    show_hab  = c6.checkbox(get_text("chk_habit"), False)
-
-    st.markdown("---")
-
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-
-    for msg in st.session_state.chat_history:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-
-    if prompt := st.chat_input(get_text("chat_input")):
-        st.session_state.chat_history.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        q = prompt.lower().strip()
-        results = data[data["name"].astype(str).str.lower().str.contains(q, na=False)]
-
-        if results.empty:
-            resp = get_text("no_match")
-        else:
-            resp = ""
-            for _, row in results.head(3).iterrows():
-                resp += f"### 🩺 {row['name']}\n"
-                if show_use and "use" in row:
-                    resp += f"**{get_text('chk_use')}:** {row['use']}\n\n"
-                if show_side and "sideEffect" in row:
-                    resp += f"**{get_text('chk_side')}:** {row['sideEffect']}\n\n"
-                if show_sub and "substitute" in row:
-                    resp += f"**{get_text('chk_sub')}:** {row['substitute']}\n\n"
-                if show_tcl and "Therapeutic Class" in row:
-                    resp += f"**{get_text('chk_tclass')}:** {row['Therapeutic Class']}\n\n"
-                if show_ccl and "Chemical Class" in row:
-                    resp += f"**{get_text('chk_cclass')}:** {row['Chemical Class']}\n\n"
-                if show_hab and "Habit Forming" in row:
-                    resp += f"**{get_text('chk_habit')}:** {row['Habit Forming']}\n\n"
-                resp += "---\n"
-
-        st.session_state.chat_history.append({"role": "assistant", "content": resp})
-        with st.chat_message("assistant"):
-            st.markdown(resp)
+    st.session_state.chat_history.append({"role": "assistant", "content": resp})
+    with st.chat_message("assistant"):
+        st.markdown(resp)
 
 # Footer
 st.markdown("---")
