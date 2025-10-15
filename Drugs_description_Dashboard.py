@@ -29,7 +29,7 @@ def toggle_language():
 
 EN = {
     "title": "💊 Drugs Dataset Dashboard & Chatbot",
-    "chat_header": "💬 Smart drug Chatbot",
+    "chat_header": "💬 Smart Drugs Chatbot",
     "chat_caption": "Type a drug name and choose what details to display.",
     "select_display": "Select what to display:",
     "chk_use": "Use",
@@ -71,7 +71,7 @@ with st.sidebar:
     st.header(get_text("lang_settings"))
     if st.button(get_text("switch_lang")):
         toggle_language()
-    st.title(get_text("title"))
+    st.title(get_text("chat_header"))
     st.markdown("---")
 
 # Main Interface
