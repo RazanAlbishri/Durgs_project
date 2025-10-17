@@ -1,6 +1,7 @@
-# 💊 Medicine App (Bilingual EN/AR) — Simple Display Version
+# 💊 Medicine App (Bilingual EN/AR) — Smart Display (Shows Both Names)
 import streamlit as st
 import pandas as pd
+import re
 
 # Config
 st.set_page_config(
@@ -13,7 +14,7 @@ st.set_page_config(
 # Load Data
 @st.cache_data
 def load_data():
-    df = pd.read_csv("medicines.csv", dtype=str, low_memory=False)
+    df = pd.read_csv("Drugs_discription.csv", dtype=str, low_memory=False)
     df.columns = df.columns.str.strip()
     df = df.dropna(how="all").drop_duplicates().fillna("Unknown")
     return df
@@ -93,13 +94,33 @@ drug_name = st.text_input(get_text("chat_input"))
 
 if drug_name:
     q = drug_name.lower().strip()
-    results = df[df["name"].astype(str).str.lower().str.contains(q, na=False)]
+
+    # 🔍 بحث ذكي يشمل الاسم التجاري والعلمي (Exact Match)
+    search_columns = ["TradeName", "ScientificName"]
+    search_columns = [col for col in search_columns if col in df.columns]
+
+    mask = pd.Series(False, index=df.index)
+    pattern = rf"\b{re.escape(q)}\b"
+    for col in search_columns:
+        mask |= df[col].astype(str).str.lower().str.contains(pattern, na=False, regex=True)
+
+    results = df[mask]
 
     if results.empty:
         st.warning(get_text("no_match"))
     else:
         for _, row in results.head(3).iterrows():
-            st.markdown(f"### 🩺 {row['name']}")
+            trade = row.get("TradeName", "Unknown")
+            sci = row.get("ScientificName", "Unknown")
+
+            # 🎯 تحديد طريقة العرض بناءً على ما كتبه المستخدم
+            if q in str(sci).lower():
+                st.markdown(f"### 🧪 {sci}")
+                st.caption(f"**💊 Trade Name:** {trade}")
+            else:
+                st.markdown(f"### 💊 {trade}")
+                st.caption(f"**🧪 Scientific Name:** {sci}")
+
             if show_use and "use" in row:
                 st.write(f"**{get_text('chk_use')}:** {row['use']}")
             if show_side and "sideEffect" in row:
