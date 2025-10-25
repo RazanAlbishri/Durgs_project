@@ -1,4 +1,4 @@
-# 💊 Medicine App (Bilingual EN/AR) — Smart Display (Shows Both Names)
+
 import streamlit as st
 import pandas as pd
 import re
@@ -29,37 +29,37 @@ def toggle_language():
     st.session_state.language = "Arabic" if st.session_state.language == "English" else "English"
 
 EN = {
-    "title": "💊 Drugs Dataset Dashboard & Chatbot",
-    "chat_header": "💬 Smart Drugs Chatbot",
+    "title": "Drugs Dataset Dashboard & Chatbot",
+    "chat_header": "Smart Drugs Chatbot",
     "chat_caption": "Type a drug name and choose what details to display.",
     "select_display": "Select what to display:",
     "chk_use": "Use",
-    "chk_side": "⚠️ Side Effects",
-    "chk_sub": "💊 Substitutes",
-    "chk_tclass": "🏥 Therapeutic Class",
-    "chk_cclass": "🧪 Chemical Class",
+    "chk_side": "Side Effects",
+    "chk_sub": "Substitutes",
+    "chk_tclass": "Therapeutic Class",
+    "chk_cclass": "Chemical Class",
     "chk_habit": "Habit Forming",
-    "chat_input": "💬 Type a drug name (e.g., augmentin)...",
-    "no_match": "⚠️ No matching drug found.",
-    "footer": "💊 Drugs Dashboard | Data source: Kaggle Dataset",
+    "chat_input": "Type a drug name (e.g., augmentin)...",
+    "no_match": "No matching drug found.",
+    "footer": "Drugs Dashboard | Data source: Kaggle Dataset",
     "switch_lang": "Switch to Arabic",
     "lang_settings": "Language"
 }
 
 AR = {
-    "title": "💊 لوحة بيانات الأدوية وروبوت المحادثة",
-    "chat_header": "💬 روبوت الأدوية الذكي",
+    "title": "لوحة بيانات الأدوية وروبوت المحادثة",
+    "chat_header": "روبوت الأدوية الذكي",
     "chat_caption": "اكتب اسم الدواء واختر التفاصيل التي تريد عرضها.",
     "select_display": "اختر ما تريد عرضه:",
     "chk_use": "الاستخدام",
-    "chk_side": "⚠️ الأعراض الجانبية",
-    "chk_sub": "💊 البدائل",
-    "chk_tclass": "🏥 الفئة العلاجية",
-    "chk_cclass": "🧪 الفئة الكيميائية",
+    "chk_side": "الأعراض الجانبية",
+    "chk_sub": "البدائل",
+    "chk_tclass": "الفئة العلاجية",
+    "chk_cclass": "الفئة الكيميائية",
     "chk_habit": "قابلية الإدمان",
-    "chat_input": "💬 اكتب اسم دواء (مثل augmentin)...",
-    "no_match": "⚠️ لم يتم العثور على دواء مطابق.",
-    "footer": "💊 لوحة الأدوية | المصدر: Kaggle Dataset",
+    "chat_input": "اكتب اسم دواء (مثل augmentin)...",
+    "no_match": "لم يتم العثور على دواء مطابق.",
+    "footer": "لوحة الأدوية | المصدر: Kaggle Dataset",
     "switch_lang": "التبديل إلى الإنجليزية",
     "lang_settings": "اللغة"
 }
@@ -95,7 +95,6 @@ drug_name = st.text_input(get_text("chat_input"))
 if drug_name:
     q = drug_name.lower().strip()
 
-    # 🔍 بحث ذكي يشمل الاسم التجاري والعلمي (Exact Match)
     search_columns = ["TradeName", "ScientificName"]
     search_columns = [col for col in search_columns if col in df.columns]
 
@@ -115,11 +114,11 @@ if drug_name:
 
             # 🎯 تحديد طريقة العرض بناءً على ما كتبه المستخدم
             if q in str(sci).lower():
-                st.markdown(f"### 🧪 {sci}")
-                st.caption(f"**💊 Trade Name:** {trade}")
+                st.markdown(f"### {sci}")
+                st.caption(f"**Trade Name:** {trade}")
             else:
-                st.markdown(f"### 💊 {trade}")
-                st.caption(f"**🧪 Scientific Name:** {sci}")
+                st.markdown(f"### {trade}")
+                st.caption(f"**Scientific Name:** {sci}")
 
             if show_use and "use" in row:
                 st.write(f"**{get_text('chk_use')}:** {row['use']}")
@@ -140,3 +139,4 @@ st.markdown(
     f"<div style='text-align:center; color:#666; margin-top: 50px;'>{get_text('footer')}</div>",
     unsafe_allow_html=True
 )
+
